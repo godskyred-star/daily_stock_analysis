@@ -215,6 +215,9 @@ python main.py
 # Scheduled mode (runs daily at 18:00)
 python main.py --schedule
 
+# Local US profit-taking poster + daily 08:00 / 21:00 monitor
+python main.py --webui --schedule --us-profit-monitor
+
 # Analyze specific stocks
 python main.py --stocks AAPL,TSLA,GOOGL
 
@@ -401,7 +404,7 @@ Enable the FastAPI service for configuration management and triggering analysis 
 
 | Command | Description |
 |---------|-------------|
-| `python main.py --serve` | Start API service + run full analysis once |
+| `python main.py --webui --schedule --us-profit-monitor` | Local poster page + daily 08:00/21:00 US profit monitor |
 | `python main.py --serve-only` | Start API service only, manually trigger analysis |
 
 - URL: `http://127.0.0.1:8000` (default landing is the US profit-taking poster; stock analysis is under Dock "分析" at `/analyze`)

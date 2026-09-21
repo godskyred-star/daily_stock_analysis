@@ -47,7 +47,7 @@ export const UsProfitTicker: React.FC = () => {
     }, 0);
     const timer = window.setInterval(() => {
       void load();
-    }, 60_000);
+    }, 15_000);
     return () => {
       window.clearTimeout(immediate);
       window.clearInterval(timer);

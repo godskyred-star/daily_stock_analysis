@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -26,8 +28,10 @@ DEFAULT_USER_AGENT = (
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
-CACHE_TTL_SECONDS = 45
+CACHE_TTL_SECONDS = 15
 HTTP_TIMEOUT_SECONDS = 12
+DEFAULT_LOCAL_SCHEDULE_TIMES = "08:00,21:00"
+_HHMM_RE = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 
 # Profit-taking triggers from the posted rule card.
 VIX_PROFIT_TAKING_MAX = 14.0
@@ -171,6 +175,43 @@ class UsProfitSnapshot:
         if signal_id == "fear_greed":
             return str(int(round(reading.value)))
         return f"{reading.value:.1f}"
+
+
+def parse_hhmm_times(
+    raw: Optional[str],
+    default: str = DEFAULT_LOCAL_SCHEDULE_TIMES,
+) -> List[str]:
+    """Parse comma-separated HH:MM times used by the local scheduler.
+
+    Invalid tokens are skipped. If nothing valid remains, fall back to 08:00,21:00
+    (Beijing-oriented local clock: after US close, and near US cash-session open).
+    """
+    source = (raw or "").strip() or default
+    times: List[str] = []
+    seen = set()
+    for part in source.split(","):
+        token = part.strip()
+        if not token:
+            continue
+        match = _HHMM_RE.match(token)
+        if not match:
+            logger.warning("Ignore invalid US profit monitor schedule time: %r", token)
+            continue
+        normalized = f"{int(match.group(1)):02d}:{match.group(2)}"
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        times.append(normalized)
+    if times:
+        return times
+    if source != default:
+        logger.warning(
+            "No valid US profit monitor schedule times in %r; falling back to %s",
+            raw,
+            default,
+        )
+        return parse_hhmm_times(default, default=default)
+    return ["08:00", "21:00"]
 
 
 def classify_vix(value: float) -> Tuple[str, str, bool]:
@@ -475,11 +516,30 @@ def build_snapshot(
     http_get_json: Callable[..., Dict[str, Any]] = _http_get_json,
 ) -> UsProfitSnapshot:
     """Compose a snapshot from provided readings or by fetching live data."""
-    signals = [
-        vix if vix is not None else fetch_vix(http_get_json=http_get_json),
-        qqq_pe if qqq_pe is not None else fetch_qqq_pe(http_get_json=http_get_json),
-        fear_greed if fear_greed is not None else fetch_fear_greed(http_get_json=http_get_json),
-    ]
+    readings: Dict[str, Optional[SignalReading]] = {
+        "vix": vix,
+        "qqq_pe": qqq_pe,
+        "fear_greed": fear_greed,
+    }
+    fetchers: Dict[str, Callable[[], SignalReading]] = {
+        "vix": lambda: fetch_vix(http_get_json=http_get_json),
+        "qqq_pe": lambda: fetch_qqq_pe(http_get_json=http_get_json),
+        "fear_greed": lambda: fetch_fear_greed(http_get_json=http_get_json),
+    }
+    missing = [key for key, value in readings.items() if value is None]
+    if len(missing) == 1:
+        key = missing[0]
+        readings[key] = fetchers[key]()
+    elif missing:
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {pool.submit(fetchers[key]): key for key in missing}
+            for future in as_completed(futures):
+                key = futures[future]
+                readings[key] = future.result()
+    ordered = [readings["vix"], readings["qqq_pe"], readings["fear_greed"]]
+    if any(item is None for item in ordered):
+        raise RuntimeError("US profit snapshot is missing one or more signals")
+    signals: List[SignalReading] = [item for item in ordered if item is not None]
     updated_at, updated_at_cn = _now_stamps()
     return UsProfitSnapshot(
         updated_at=updated_at,
@@ -612,6 +672,17 @@ def run_us_profit_monitor(
     else:
         logger.warning("US profit monitor notification failed")
     return snapshot
+
+
+def run_local_us_profit_job(*, send_notification: bool = True) -> UsProfitSnapshot:
+    """Entry point for the local scheduler / CLI daily job."""
+    from src.notification import NotificationService
+
+    notifier = NotificationService()
+    return run_us_profit_monitor(
+        send_notification=send_notification,
+        notifier=notifier,
+    )
 
 
 def snapshot_to_json(snapshot: UsProfitSnapshot) -> str:

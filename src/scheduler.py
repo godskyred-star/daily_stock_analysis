@@ -7,7 +7,8 @@
 职责：
 1. 支持每日定时执行股票分析
 2. 支持定时执行大盘复盘
-3. 优雅处理信号，确保可靠退出
+3. 支持同一进程挂多个本地巡检时间（如美股止盈 08:00 / 21:00）
+4. 优雅处理信号，确保可靠退出
 
 依赖：
 - schedule: 轻量级定时任务库
@@ -15,13 +16,14 @@
 
 import logging
 import signal
-import sys
 import time
 import threading
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
 logger = logging.getLogger(__name__)
+
+ScheduledJob = Tuple[str, Callable[[], None], str]
 
 
 class GracefulShutdown:
@@ -59,6 +61,7 @@ class Scheduler:
     
     基于 schedule 库实现，支持：
     - 每日定时执行
+    - 同一调度器挂多个 HH:MM 任务
     - 启动时立即执行
     - 优雅退出
     """
@@ -68,7 +71,7 @@ class Scheduler:
         初始化调度器
         
         Args:
-            schedule_time: 每日执行时间，格式 "HH:MM"
+            schedule_time: 默认每日执行时间，格式 "HH:MM"（兼容旧调用）
         """
         try:
             import schedule
@@ -82,6 +85,15 @@ class Scheduler:
         self._task_callback: Optional[Callable] = None
         self._running = False
         
+    def add_daily_task(self, task: Callable, schedule_time: str, name: str = "task") -> None:
+        """Register a named daily job at HH:MM without running it immediately."""
+        def job():
+            self._safe_run_named_task(task, name)
+
+        job.__name__ = f"job_{name}_{schedule_time.replace(':', '')}"
+        self.schedule.every().day.at(schedule_time).do(job)
+        logger.info("已设置本地每日定时任务 [%s]，执行时间: %s", name, schedule_time)
+
     def set_daily_task(self, task: Callable, run_immediately: bool = True):
         """
         设置每日定时任务
@@ -99,23 +111,31 @@ class Scheduler:
         if run_immediately:
             logger.info("立即执行一次任务...")
             self._safe_run_task()
+
+    def _safe_run_named_task(self, task: Callable, name: str) -> None:
+        """Run one named job with exception isolation."""
+        try:
+            logger.info("=" * 50)
+            logger.info(
+                "本地定时任务 [%s] 开始执行 - %s",
+                name,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            )
+            logger.info("=" * 50)
+            task()
+            logger.info(
+                "本地定时任务 [%s] 执行完成 - %s",
+                name,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        except Exception as e:
+            logger.exception("本地定时任务 [%s] 执行失败: %s", name, e)
     
     def _safe_run_task(self):
         """安全执行任务（带异常捕获）"""
         if self._task_callback is None:
             return
-        
-        try:
-            logger.info("=" * 50)
-            logger.info(f"定时任务开始执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            logger.info("=" * 50)
-            
-            self._task_callback()
-            
-            logger.info(f"定时任务执行完成 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            
-        except Exception as e:
-            logger.exception(f"定时任务执行失败: {e}")
+        self._safe_run_named_task(self._task_callback, "task")
     
     def run(self):
         """
@@ -124,7 +144,7 @@ class Scheduler:
         阻塞运行，直到收到退出信号
         """
         self._running = True
-        logger.info("调度器开始运行...")
+        logger.info("调度器开始运行（本地进程常驻）...")
         logger.info(f"下次执行时间: {self._get_next_run_time()}")
         
         while self._running and not self.shutdown_handler.should_shutdown:
@@ -150,6 +170,46 @@ class Scheduler:
         self._running = False
 
 
+def unique_immediate_jobs(jobs: Sequence[ScheduledJob]) -> List[Tuple[Callable[[], None], str]]:
+    """Keep the first occurrence of each (task, name) pair for startup runs."""
+    seen = set()
+    unique: List[Tuple[Callable[[], None], str]] = []
+    for _when, task, name in jobs:
+        key = (id(task), name)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append((task, name))
+    return unique
+
+
+def run_with_jobs(
+    jobs: Iterable[ScheduledJob],
+    run_immediately: bool = True,
+):
+    """
+    Register multiple local daily jobs and block in the scheduler loop.
+
+    Args:
+        jobs: iterable of (HH:MM, callback, name)
+        run_immediately: run each unique callback once at startup
+    """
+    job_list = list(jobs)
+    if not job_list:
+        raise ValueError("run_with_jobs requires at least one job")
+
+    scheduler = Scheduler(schedule_time=job_list[0][0])
+    for when, task, name in job_list:
+        scheduler.add_daily_task(task, when, name=name)
+
+    if run_immediately:
+        logger.info("启动时立即执行一次本地任务...")
+        for task, name in unique_immediate_jobs(job_list):
+            scheduler._safe_run_named_task(task, name)
+
+    scheduler.run()
+
+
 def run_with_schedule(
     task: Callable,
     schedule_time: str = "18:00",
@@ -163,9 +223,10 @@ def run_with_schedule(
         schedule_time: 每日执行时间
         run_immediately: 是否立即执行一次
     """
-    scheduler = Scheduler(schedule_time=schedule_time)
-    scheduler.set_daily_task(task, run_immediately=run_immediately)
-    scheduler.run()
+    run_with_jobs(
+        [(schedule_time, task, "task")],
+        run_immediately=run_immediately,
+    )
 
 
 if __name__ == "__main__":

@@ -254,6 +254,7 @@ daily_stock_analysis/
 | `US_PROFIT_MONITOR_ENABLED` | 启用美股止盈三信号监控（VIX / QQQ PE / CNN Fear & Greed） | `true` |
 | `US_PROFIT_MONITOR_NOTIFY` | 定时任务是否推送美股止盈快照 | `true` |
 | `US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS` | 进入止盈区的指标数达到该值才推送，`0` 表示每天都推 | `1` |
+| `US_PROFIT_MONITOR_SCHEDULE_TIMES` | 本机常驻巡检时间（逗号分隔 HH:MM，按本机时钟） | `08:00,21:00` |
 | `TRADING_DAY_CHECK_ENABLED` | 交易日检查：默认 `true`，非交易日跳过执行；设为 `false` 或使用 `--force-run` 可强制执行（Issue #373） | `true` |
 | `SCHEDULE_ENABLED` | 启用定时任务 | `false` |
 | `SCHEDULE_TIME` | 定时执行时间 | `18:00` |
@@ -385,8 +386,9 @@ python main.py --no-market-review     # 仅个股分析
 python main.py --stocks 600519,300750 # 指定股票
 python main.py --dry-run              # 仅获取数据，不 AI 分析
 python main.py --no-notify            # 不发送推送
-python main.py --schedule             # 定时任务模式
-python main.py --us-profit-monitor    # 仅运行美股止盈三信号监控
+python main.py --schedule             # 本地全量定时任务
+python main.py --us-profit-monitor    # 仅运行一次美股止盈三信号监控
+python main.py --webui --schedule --us-profit-monitor  # 本地看板 + 每日 08:00/21:00 巡检
 python main.py --force-run            # 非交易日也强制执行（Issue #373）
 python main.py --debug                # 调试模式（详细日志）
 python main.py --workers 5            # 指定并发数
@@ -452,6 +454,9 @@ python main.py --schedule
 
 # 启动定时模式（启动时不执行，仅等待下次定时触发）
 python main.py --schedule --no-run-immediately
+
+# 美股止盈：本机看板 + 每天 08:00 / 21:00 巡检（推荐，不依赖 GitHub Actions）
+python main.py --webui --schedule --us-profit-monitor
 ```
 
 #### 环境变量方式

@@ -270,6 +270,8 @@ class Config:
     us_profit_monitor_enabled: bool = True
     us_profit_monitor_notify: bool = True
     us_profit_monitor_notify_min_triggers: int = 1
+    # Local clock times (typically Beijing) for the dedicated US profit job
+    us_profit_monitor_schedule_times: str = "08:00,21:00"
 
     # === 实时行情增强数据配置 ===
     # 实时行情开关（关闭后使用历史收盘价进行分析）
@@ -710,6 +712,9 @@ class Config:
             us_profit_monitor_notify_min_triggers=int(
                 os.getenv('US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS', '1')
             ),
+            us_profit_monitor_schedule_times=os.getenv(
+                'US_PROFIT_MONITOR_SCHEDULE_TIMES', '08:00,21:00'
+            ),
             webui_enabled=os.getenv('WEBUI_ENABLED', 'false').lower() == 'true',
             webui_host=os.getenv('WEBUI_HOST', '127.0.0.1'),
             webui_port=int(os.getenv('WEBUI_PORT', '8000')),
@@ -1084,6 +1089,12 @@ class Config:
             stock_list = ['000001']
 
         self.stock_list = stock_list
+
+    def get_us_profit_monitor_schedule_times(self) -> List[str]:
+        """Local HH:MM times for the dedicated US profit-taking job."""
+        from src.us_profit_monitor import parse_hhmm_times
+
+        return parse_hhmm_times(self.us_profit_monitor_schedule_times)
     
     def validate_structured(self) -> List[ConfigIssue]:
         """Return structured validation issues with severity levels.

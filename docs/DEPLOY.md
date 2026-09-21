@@ -122,8 +122,11 @@ python main.py
 # 定时任务模式（前台运行）
 python main.py --schedule
 
+# 美股止盈：本机看板 + 每天 08:00 / 21:00 巡检
+python main.py --webui --schedule --us-profit-monitor
+
 # 后台运行（使用 nohup）
-nohup python main.py --schedule > /dev/null 2>&1 &
+nohup python main.py --webui --schedule --us-profit-monitor > /dev/null 2>&1 &
 ```
 
 ---
@@ -149,7 +152,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/stock-analyzer
 Environment="PATH=/opt/stock-analyzer/venv/bin"
-ExecStart=/opt/stock-analyzer/venv/bin/python main.py --schedule
+ExecStart=/opt/stock-analyzer/venv/bin/python main.py --webui --schedule --us-profit-monitor
 Restart=always
 RestartSec=30
 

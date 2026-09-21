@@ -189,10 +189,11 @@ class FetcherParseTestCase(unittest.TestCase):
         self.assertEqual(reading.zone, "profit_taking")
 
     def test_fetch_qqq_pe_error_when_payload_empty(self):
-        with patch("yfinance.Ticker") as ticker_cls:
-            ticker = MagicMock()
-            ticker.info = {}
-            ticker_cls.return_value = ticker
+        fake_yf = MagicMock()
+        ticker = MagicMock()
+        ticker.info = {}
+        fake_yf.Ticker.return_value = ticker
+        with patch.dict("sys.modules", {"yfinance": fake_yf}):
             reading = fetch_qqq_pe(http_get_json=lambda *args, **kwargs: {})
         self.assertIsNone(reading.value)
         self.assertEqual(reading.zone, "unknown")

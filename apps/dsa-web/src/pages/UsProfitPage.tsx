@@ -78,7 +78,8 @@ const PLAYBOOK_ROWS = [
   },
 ] as const;
 
-function formatSignalValue(signal?: UsProfitSignal | null): string {
+function formatSignalValue(signal?: UsProfitSignal | null, loading = false): string {
+  if (loading && !signal) return '加载中';
   if (!signal || signal.value == null) return '--';
   if (signal.id === 'fear_greed') return String(Math.round(signal.value));
   return Number.isInteger(signal.value) ? String(signal.value) : signal.value.toFixed(1);
@@ -106,7 +107,8 @@ const PosterCard: React.FC<{
   index: number;
   def: CardDef;
   signal?: UsProfitSignal;
-}> = ({ index, def, signal }) => {
+  loading?: boolean;
+}> = ({ index, def, signal, loading = false }) => {
   return (
     <article className="us-profit-card">
       <div className="flex flex-col items-center text-center px-2">
@@ -136,9 +138,12 @@ const PosterCard: React.FC<{
         })}
       </ul>
 
-      <p className="mt-auto pt-5 text-[15px] text-white">
-        当前：
-        <span className="font-semibold tracking-wide">{formatSignalValue(signal)}</span>
+      <p className="mt-auto pt-5 text-white">
+        <span className="text-[15px]">当前：</span>
+        <span className="us-profit-live-value">{formatSignalValue(signal, loading)}</span>
+        {signal?.profitTaking ? (
+          <span className="ml-2 align-middle text-xs text-[#ff8b9a]">止盈区</span>
+        ) : null}
       </p>
       {signal?.error ? (
         <p className="mt-2 text-xs text-[#ff8b9a]">{signal.error}</p>
@@ -199,6 +204,7 @@ const UsProfitPage: React.FC = () => {
   const [snapshot, setSnapshot] = useState<UsProfitSnapshot | null>(null);
   const [error, setError] = useState<ParsedApiError | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async (refresh = false) => {
     if (refresh) setIsRefreshing(true);
@@ -210,20 +216,16 @@ const UsProfitPage: React.FC = () => {
       setError(getParsedApiError(err));
     } finally {
       setIsRefreshing(false);
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const immediate = window.setTimeout(() => {
-      void load();
-    }, 0);
+    void load();
     const timer = window.setInterval(() => {
       void load();
-    }, 60_000);
-    return () => {
-      window.clearTimeout(immediate);
-      window.clearInterval(timer);
-    };
+    }, 15_000);
+    return () => window.clearInterval(timer);
   }, [load]);
 
   const signalMap = useMemo(() => {
@@ -241,7 +243,11 @@ const UsProfitPage: React.FC = () => {
           <h1 className="us-profit-title">美股止盈</h1>
           <p className="us-profit-subtitle">三个重要信号</p>
           <div className="mt-4 flex items-center justify-center gap-3 text-xs text-[#8aa39a]">
-            <span>北京时间 {snapshot?.updatedAtCn || '实时更新中'}</span>
+            <span className="us-profit-live-badge">
+              <span className="us-profit-live-dot" aria-hidden />
+              实时
+            </span>
+            <span>北京时间 {snapshot?.updatedAtCn || (isLoading ? '正在读取实时数据' : '实时更新中')}</span>
             <button
               type="button"
               onClick={() => void load(true)}
@@ -257,14 +263,20 @@ const UsProfitPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4">
           {CARD_DEFS.map((def, index) => (
-            <PosterCard key={def.id} index={index + 1} def={def} signal={signalMap[def.id]} />
+            <PosterCard
+              key={def.id}
+              index={index + 1}
+              def={def}
+              signal={signalMap[def.id]}
+              loading={isLoading}
+            />
           ))}
         </div>
 
         <ResonanceBoard resonance={snapshot?.resonance} />
 
         <p className="text-center text-[11px] text-[#6d837b] mt-6">
-          {snapshot?.disclaimer || '仅供参考，不构成投资建议。'} · 每 60 秒自动刷新
+          {snapshot?.disclaimer || '仅供参考，不构成投资建议。'} · 每 15 秒自动刷新实盘数据
         </p>
       </div>
     </div>
