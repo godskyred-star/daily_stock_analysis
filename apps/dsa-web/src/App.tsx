@@ -68,16 +68,16 @@ type DockItem = {
 
 const NAV_ITEMS: DockItem[] = [
     {
-        key: 'home',
-        label: '首页',
-        to: '/',
-        icon: HomeIcon,
-    },
-    {
         key: 'us-profit',
         label: '止盈',
-        to: '/us-profit',
+        to: '/',
         icon: UsProfitIcon,
+    },
+    {
+        key: 'home',
+        label: '分析',
+        to: '/analyze',
+        icon: HomeIcon,
     },
     {
         key: 'chat',
@@ -106,7 +106,7 @@ const DockNav: React.FC = () => {
     return (
         <aside className="dock-nav" aria-label="主导航">
             <div className="dock-surface">
-                <NavLink to="/" className="dock-logo" title="首页" aria-label="首页">
+                <NavLink to="/" className="dock-logo" title="美股止盈" aria-label="美股止盈">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
@@ -220,8 +220,9 @@ const AppContent: React.FC = () => {
             <DockNav/>
             <main className="flex-1 dock-safe-area">
                 <Routes>
-                    <Route path="/" element={<HomePage/>}/>
-                    <Route path="/us-profit" element={<UsProfitPage/>}/>
+                    <Route path="/" element={<UsProfitPage/>}/>
+                    <Route path="/us-profit" element={<Navigate to="/" replace />}/>
+                    <Route path="/analyze" element={<HomePage/>}/>
                     <Route path="/chat" element={<ChatPage/>}/>
                     <Route path="/backtest" element={<BacktestPage/>}/>
                     <Route path="/settings" element={<SettingsPage/>}/>

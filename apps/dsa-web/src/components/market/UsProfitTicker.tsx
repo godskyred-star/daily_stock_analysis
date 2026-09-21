@@ -57,7 +57,7 @@ export const UsProfitTicker: React.FC = () => {
   if (error && !snapshot) {
     return (
       <Link
-        to="/us-profit"
+        to="/"
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-elevated/80 border border-white/5 text-xs text-muted hover:text-white transition-colors"
       >
         美股止盈监控暂时不可用
@@ -75,7 +75,7 @@ export const UsProfitTicker: React.FC = () => {
 
   return (
     <Link
-      to="/us-profit"
+      to="/"
       className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 rounded-xl bg-elevated/80 border border-white/5 hover:border-cyan/30 transition-colors"
       title="打开美股止盈实时看板"
     >

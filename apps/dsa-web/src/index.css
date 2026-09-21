@@ -433,6 +433,73 @@ body {
   padding-left: 120px;
 }
 
+/* ============ 美股止盈海报页 ============ */
+.us-profit-page {
+  min-height: 100vh;
+  background: #050505;
+  padding: 28px 16px 48px;
+}
+
+.us-profit-sheet {
+  max-width: 920px;
+  margin: 0 auto;
+  background: #050505;
+}
+
+.us-profit-title {
+  font-size: clamp(42px, 7vw, 64px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #7eceb0;
+  line-height: 1.1;
+}
+
+.us-profit-subtitle {
+  margin-top: 10px;
+  font-size: clamp(28px, 4.4vw, 40px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.us-profit-card {
+  background: #101c1a;
+  border-radius: 18px;
+  padding: 22px 18px 20px;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+}
+
+.us-profit-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-weight: 800;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.us-profit-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 18px 8px 16px;
+}
+
+.us-profit-board {
+  background: #101c1a;
+  border-radius: 18px;
+  padding: 22px 22px 18px;
+}
+
+.us-profit-row-active td {
+  background: rgba(126, 206, 176, 0.08);
+}
+
 /* ============ 标题样式 ============ */
 .label-uppercase {
   font-size: 11px;
