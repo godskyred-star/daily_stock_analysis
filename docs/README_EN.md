@@ -38,6 +38,7 @@ English | [简体中文](../README.md) | [繁體中文](README_CHT.md)
 | Analysis | Multi-dimensional Analysis | Technicals + chip distribution + sentiment + real-time quotes |
 | Market | Global Markets | A-shares, Hong Kong stocks, US stocks |
 | Review | Market Review | Daily overview, sectors, northbound capital flow |
+| Profit | US 3-signal monitor | Default WebUI landing: live VIX, QQQ PE, CNN Fear & Greed poster with a triple-resonance take-profit playbook |
 | Backtest | AI Backtest Validation | Auto-evaluate historical analysis accuracy, direction win rate, SL/TP hit rates |
 | Agent Q&A | Strategy Chat | Multi-turn strategy chat with 11 built-in skills (Web/Bot/API) |
 | Notifications | Multi-channel Push | Telegram, Discord, Email, WeChat Work, Feishu, etc. |
@@ -213,6 +214,9 @@ python main.py
 
 # Scheduled mode (runs daily at 18:00)
 python main.py --schedule
+
+# Local US profit-taking poster + daily 08:00 / 21:00 monitor
+python main.py --webui --schedule --us-profit-monitor
 
 # Analyze specific stocks
 python main.py --stocks AAPL,TSLA,GOOGL
@@ -400,10 +404,10 @@ Enable the FastAPI service for configuration management and triggering analysis 
 
 | Command | Description |
 |---------|-------------|
-| `python main.py --serve` | Start API service + run full analysis once |
+| `python main.py --webui --schedule --us-profit-monitor` | Local poster page + daily 08:00/21:00 US profit monitor |
 | `python main.py --serve-only` | Start API service only, manually trigger analysis |
 
-- URL: `http://127.0.0.1:8000`
+- URL: `http://127.0.0.1:8000` (default landing is the US profit-taking poster; stock analysis is under Dock "分析" at `/analyze`)
 - API docs: `http://127.0.0.1:8000/docs`
 
 ### Features

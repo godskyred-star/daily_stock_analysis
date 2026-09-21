@@ -54,6 +54,7 @@ bot/
 │   ├── base.py             # 命令抽象基类
 │   ├── analyze.py          # /analyze 股票分析
 │   ├── market.py           # /market 大盘复盘
+│   ├── us_profit.py        # /usprofit 美股止盈三信号
 │   ├── help.py             # /help 帮助信息
 │   └── status.py           # /status 系统状态
 └── platforms/              # 平台适配器
@@ -188,6 +189,7 @@ class CommandDispatcher:
 | /analyze | /a, 分析 | 分析指定股票 | `/analyze 600519` |
 
 | /market | /m, 大盘 | 大盘复盘 | `/market` |
+| /usprofit | /止盈, /vix | 美股止盈三信号实时监控 | `/usprofit` |
 
 | /batch | /b, 批量 | 批量分析自选股 | `/batch` |
 

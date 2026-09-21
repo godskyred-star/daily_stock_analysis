@@ -68,7 +68,10 @@ def parse_arguments() -> argparse.Namespace:
   python main.py --no-notify        # 不发送推送通知
   python main.py --single-notify    # 启用单股推送模式（每分析完一只立即推送）
   python main.py --schedule         # 启用定时任务模式
+  python main.py --us-profit-monitor  # 仅运行一次美股止盈三信号监控
+  python main.py --webui --schedule --us-profit-monitor  # 本地看板 + 每日 08:00/21:00 巡检
   python main.py --market-review    # 仅运行大盘复盘
+  python main.py --us-profit-monitor  # 仅运行美股止盈三信号监控
         '''
     )
 
@@ -112,7 +115,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--schedule',
         action='store_true',
-        help='启用定时任务模式，每日定时执行'
+        help='启用本地定时任务模式并保持进程常驻'
     )
 
     parser.add_argument(
@@ -125,6 +128,18 @@ def parse_arguments() -> argparse.Namespace:
         '--market-review',
         action='store_true',
         help='仅运行大盘复盘分析'
+    )
+
+    parser.add_argument(
+        '--us-profit-monitor',
+        action='store_true',
+        help='仅运行美股止盈三信号监控；配合 --schedule 时在本地按 08:00/21:00 循环巡检'
+    )
+
+    parser.add_argument(
+        '--no-us-profit-monitor',
+        action='store_true',
+        help='跳过美股止盈三信号监控'
     )
 
     parser.add_argument(
@@ -367,6 +382,20 @@ def run_full_analysis(
                     else:
                         logger.warning("合并推送失败")
 
+        if (
+            getattr(config, 'us_profit_monitor_enabled', True)
+            and not getattr(args, 'no_us_profit_monitor', False)
+        ):
+            try:
+                from src.us_profit_monitor import run_us_profit_monitor
+
+                run_us_profit_monitor(
+                    send_notification=not args.no_notify,
+                    notifier=pipeline.notifier,
+                )
+            except Exception as exc:
+                logger.exception("US profit monitor failed: %s", exc)
+
         # 输出摘要
         if results:
             logger.info("\n===== 分析结果摘要 =====")
@@ -572,8 +601,9 @@ def main() -> int:
     if bot_clients_started:
         start_bot_stream_clients(config)
 
-    # === 仅 Web 服务模式：不自动执行分析 ===
-    if args.serve_only:
+    # === 仅 Web 服务模式：不自动执行分析（本地 --schedule 除外，需常驻巡检） ===
+    schedule_mode = args.schedule or config.schedule_enabled
+    if args.serve_only and not schedule_mode:
         logger.info("模式: 仅 Web 服务")
         logger.info(f"Web 服务运行中: http://{args.host}:{args.port}")
         logger.info("通过 /api/v1/analysis/stock/{code} 接口触发分析")
@@ -602,6 +632,28 @@ def main() -> int:
                 f"回测完成: processed={stats.get('processed')} saved={stats.get('saved')} "
                 f"completed={stats.get('completed')} insufficient={stats.get('insufficient')} errors={stats.get('errors')}"
             )
+            return 0
+
+        # 模式1a: 仅美股止盈三信号监控（无 --schedule 时跑一次；有 WebUI 则保持页面常驻）
+        if getattr(args, 'us_profit_monitor', False) and not schedule_mode:
+            from src.notification import NotificationService
+            from src.us_profit_monitor import format_markdown, run_us_profit_monitor
+
+            logger.info("模式: 美股止盈三信号监控（单次本地巡检）")
+            notifier = NotificationService()
+            snapshot = run_us_profit_monitor(
+                send_notification=not args.no_notify,
+                force_notify=not args.no_notify,
+                notifier=notifier,
+            )
+            logger.info("\n%s", format_markdown(snapshot))
+            if start_serve:
+                logger.info("WebUI 美股止盈看板运行中: http://%s:%s （按 Ctrl+C 退出）", args.host, args.port)
+                try:
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    logger.info("\n用户中断，程序退出")
             return 0
 
         # 模式1: 仅大盘复盘
@@ -661,10 +713,9 @@ def main() -> int:
             )
             return 0
 
-        # 模式2: 定时任务模式
-        if args.schedule or config.schedule_enabled:
-            logger.info("模式: 定时任务")
-            logger.info(f"每日执行时间: {config.schedule_time}")
+        # 模式2: 本地定时任务模式（进程常驻，不依赖 GitHub Actions）
+        if schedule_mode:
+            logger.info("模式: 本地定时任务")
 
             # Determine whether to run immediately:
             # Command line arg --no-run-immediately overrides config if present.
@@ -674,17 +725,45 @@ def main() -> int:
                 should_run_immediately = False
 
             logger.info(f"启动时立即执行: {should_run_immediately}")
+            if start_serve:
+                logger.info("WebUI 本地看板: http://%s:%s", args.host, args.port)
 
-            from src.scheduler import run_with_schedule
+            from src.scheduler import run_with_jobs
+            from src.us_profit_monitor import run_local_us_profit_job
 
-            def scheduled_task():
+            profit_only = getattr(args, 'us_profit_monitor', False)
+            profit_enabled = (
+                getattr(config, 'us_profit_monitor_enabled', True)
+                and not getattr(args, 'no_us_profit_monitor', False)
+            )
+            profit_times = config.get_us_profit_monitor_schedule_times()
+
+            def scheduled_full_analysis():
                 run_full_analysis(config, args, stock_codes)
 
-            run_with_schedule(
-                task=scheduled_task,
-                schedule_time=config.schedule_time,
-                run_immediately=should_run_immediately
-            )
+            def scheduled_us_profit_monitor():
+                run_local_us_profit_job(send_notification=not args.no_notify)
+
+            jobs = []
+            if profit_only:
+                logger.info("本地美股止盈巡检时间: %s", ", ".join(profit_times))
+                jobs = [
+                    (when, scheduled_us_profit_monitor, "us-profit-monitor")
+                    for when in profit_times
+                ]
+            else:
+                logger.info(f"每日全量分析时间: {config.schedule_time}")
+                jobs.append((config.schedule_time, scheduled_full_analysis, "full-analysis"))
+                if profit_enabled:
+                    extra_times = [when for when in profit_times if when != config.schedule_time]
+                    if extra_times:
+                        logger.info("额外本地美股止盈巡检时间: %s", ", ".join(extra_times))
+                    jobs.extend(
+                        (when, scheduled_us_profit_monitor, "us-profit-monitor")
+                        for when in extra_times
+                    )
+
+            run_with_jobs(jobs, run_immediately=should_run_immediately)
             return 0
 
         # 模式3: 正常单次运行

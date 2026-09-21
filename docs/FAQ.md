@@ -308,6 +308,44 @@ python main.py --market-only
 
 ---
 
+## 🇺🇸 美股止盈监控
+
+### Q: 美股止盈三信号从哪里看？怎么每天监控？
+
+**看板**：本机打开 WebUI 默认就是「美股止盈」海报页（`/`），个股分析在 Dock「分析」。三个「当前」值为实时行情，每 15 秒自动刷新，也可点「立即刷新」。
+
+```bash
+python main.py --webui
+```
+
+**规则**：
+- VIX < 14、QQQ PE > 35、CNN Fear & Greed ≥ 80 视为进入止盈区
+- 1 个触发：轻度过热，持股或微调
+- 2 个触发：中度危险，建议减仓约 20%
+- 3 个全满：极度疯狂，建议仓位降至 50% 以下
+
+**每日巡检（放在本机，推荐）**：
+
+```bash
+# 海报实时刷新 + 每天 08:00、21:00 本机巡检/推送（进程常驻）
+python main.py --webui --schedule --us-profit-monitor
+
+# 只跑一次
+python main.py --us-profit-monitor
+```
+
+时间按**本机时钟**（建议北京时间）。可用 `US_PROFIT_MONITOR_SCHEDULE_TIMES=08:00,21:00` 修改。后台常驻：
+
+```bash
+nohup python main.py --webui --schedule --us-profit-monitor > /dev/null 2>&1 &
+```
+
+定时推送默认在至少 1 个指标进入止盈区时发送，可把 `US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS` 设为 `0` 改为每天都推。GitHub Actions 只是可选备份，不是默认路径。
+
+机器人命令：`/usprofit`（别名：止盈、vix）
+
+---
+
 ## 💬 还有问题？
 
 如果以上内容没有解决你的问题，欢迎：
