@@ -251,6 +251,9 @@ daily_stock_analysis/
 | `MAX_WORKERS` | 并发线程数 | `3` |
 | `MARKET_REVIEW_ENABLED` | 启用大盘复盘 | `true` |
 | `MARKET_REVIEW_REGION` | 大盘复盘市场区域：cn(A股)、us(美股)、both(两者)，us 适合仅关注美股的用户 | `cn` |
+| `US_PROFIT_MONITOR_ENABLED` | 启用美股止盈三信号监控（VIX / QQQ PE / CNN Fear & Greed） | `true` |
+| `US_PROFIT_MONITOR_NOTIFY` | 定时任务是否推送美股止盈快照 | `true` |
+| `US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS` | 进入止盈区的指标数达到该值才推送，`0` 表示每天都推 | `1` |
 | `TRADING_DAY_CHECK_ENABLED` | 交易日检查：默认 `true`，非交易日跳过执行；设为 `false` 或使用 `--force-run` 可强制执行（Issue #373） | `true` |
 | `SCHEDULE_ENABLED` | 启用定时任务 | `false` |
 | `SCHEDULE_TIME` | 定时执行时间 | `18:00` |
@@ -383,6 +386,7 @@ python main.py --stocks 600519,300750 # 指定股票
 python main.py --dry-run              # 仅获取数据，不 AI 分析
 python main.py --no-notify            # 不发送推送
 python main.py --schedule             # 定时任务模式
+python main.py --us-profit-monitor    # 仅运行美股止盈三信号监控
 python main.py --force-run            # 非交易日也强制执行（Issue #373）
 python main.py --debug                # 调试模式（详细日志）
 python main.py --workers 5            # 指定并发数
@@ -400,6 +404,7 @@ python main.py --workers 5            # 指定并发数
 schedule:
   # UTC 时间，北京时间 = UTC + 8
   - cron: '0 10 * * 1-5'   # 周一到周五 18:00（北京时间）
+  - cron: '0 21 * * 1-5'   # 美股收盘后止盈巡检
 ```
 
 常用时间对照：

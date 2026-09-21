@@ -99,6 +99,8 @@ class HelpCommand(BotCommand):
             "",
             f"• {prefix}market - 查看大盘复盘",
             "",
+            f"• {prefix}usprofit - 美股止盈三信号",
+            "",
             f"• {prefix}batch - 批量分析自选股",
         ])
         

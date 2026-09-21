@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- 🇺🇸 **美股止盈三信号实时监控** — WebUI 新增「止盈」看板，实时显示 VIX、QQQ PE（纳指100市盈率）和 CNN Fear & Greed；按三共振法则给出轻度过热 / 中度危险 / 极度疯狂操作建议。支持 `GET /api/v1/market/us-profit-signals`、`python main.py --us-profit-monitor`、机器人 `/usprofit`、Agent 工具，以及 GitHub Actions 美股收盘后巡检。
 - feat(search): add SearXNG support as quota-free fallback (Fixes #550)
 - 📊 **LLM cost tracking** — all LLM calls (analysis, agent, market review) are recorded in the `llm_usage` table; new `GET /api/v1/usage/summary?period=today|month|all` endpoint returns aggregated token usage broken down by call type and model
 - ⚙️ **GitHub Actions LiteLLM 配置支持** — 工作流新增 `LITELLM_CONFIG`、`LITELLM_API_KEY`、`LITELLM_MODEL`、`LITELLM_CONFIG_YAML` 环境变量，支持使用提交 `litellm_config.yaml` 文件方式，或将 `litellm_config.yaml` 配置写入 GitHub Actions Variables 或 Secret 的方式，以实现灵活配置所有 AI 提供商（包括 siliconflow、AIHubMix 等），与本地环境保持一致；配置诊断步骤新增 LiteLLM 状态检查；`litellm_config.example.yaml` 新增 siliconflow 提供商配置示例

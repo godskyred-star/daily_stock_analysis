@@ -38,6 +38,7 @@ English | [简体中文](../README.md) | [繁體中文](README_CHT.md)
 | Analysis | Multi-dimensional Analysis | Technicals + chip distribution + sentiment + real-time quotes |
 | Market | Global Markets | A-shares, Hong Kong stocks, US stocks |
 | Review | Market Review | Daily overview, sectors, northbound capital flow |
+| Profit | US 3-signal monitor | Live VIX, QQQ PE, CNN Fear & Greed with a triple-resonance take-profit playbook |
 | Backtest | AI Backtest Validation | Auto-evaluate historical analysis accuracy, direction win rate, SL/TP hit rates |
 | Agent Q&A | Strategy Chat | Multi-turn strategy chat with 11 built-in skills (Web/Bot/API) |
 | Notifications | Multi-channel Push | Telegram, Discord, Email, WeChat Work, Feishu, etc. |

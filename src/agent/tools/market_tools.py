@@ -102,7 +102,33 @@ get_sector_rankings_tool = ToolDefinition(
 )
 
 
+def _handle_get_us_profit_signals() -> dict:
+    """Return live US profit-taking signals and the resonance playbook."""
+    from src.us_profit_monitor import get_snapshot
+
+    try:
+        snapshot = get_snapshot(use_cache=True)
+        return snapshot.to_dict()
+    except Exception as exc:
+        logger.exception("get_us_profit_signals failed: %s", exc)
+        return {"error": str(exc)}
+
+
+get_us_profit_signals_tool = ToolDefinition(
+    name="get_us_profit_signals",
+    description=(
+        "Get live US profit-taking signals: VIX (CBOE), QQQ / Nasdaq-100 PE, "
+        "and CNN Fear & Greed, plus the triple-resonance action (hold / trim 20% / "
+        "cut below 50%). Use when the user asks about taking profit, market heat, "
+        "VIX, QQQ valuation, or fear and greed."
+    ),
+    parameters=[],
+    handler=_handle_get_us_profit_signals,
+    category="market",
+)
+
 ALL_MARKET_TOOLS = [
     get_market_indices_tool,
     get_sector_rankings_tool,
+    get_us_profit_signals_tool,
 ]
