@@ -69,6 +69,7 @@ def parse_arguments() -> argparse.Namespace:
   python main.py --single-notify    # 启用单股推送模式（每分析完一只立即推送）
   python main.py --schedule         # 启用定时任务模式
   python main.py --market-review    # 仅运行大盘复盘
+  python main.py --us-profit-monitor  # 仅运行美股止盈三信号监控
         '''
     )
 
@@ -125,6 +126,18 @@ def parse_arguments() -> argparse.Namespace:
         '--market-review',
         action='store_true',
         help='仅运行大盘复盘分析'
+    )
+
+    parser.add_argument(
+        '--us-profit-monitor',
+        action='store_true',
+        help='仅运行美股止盈三信号监控（VIX / QQQ PE / Fear & Greed）'
+    )
+
+    parser.add_argument(
+        '--no-us-profit-monitor',
+        action='store_true',
+        help='跳过美股止盈三信号监控'
     )
 
     parser.add_argument(
@@ -367,6 +380,20 @@ def run_full_analysis(
                     else:
                         logger.warning("合并推送失败")
 
+        if (
+            getattr(config, 'us_profit_monitor_enabled', True)
+            and not getattr(args, 'no_us_profit_monitor', False)
+        ):
+            try:
+                from src.us_profit_monitor import run_us_profit_monitor
+
+                run_us_profit_monitor(
+                    send_notification=not args.no_notify,
+                    notifier=pipeline.notifier,
+                )
+            except Exception as exc:
+                logger.exception("US profit monitor failed: %s", exc)
+
         # 输出摘要
         if results:
             logger.info("\n===== 分析结果摘要 =====")
@@ -602,6 +629,21 @@ def main() -> int:
                 f"回测完成: processed={stats.get('processed')} saved={stats.get('saved')} "
                 f"completed={stats.get('completed')} insufficient={stats.get('insufficient')} errors={stats.get('errors')}"
             )
+            return 0
+
+        # 模式1a: 仅美股止盈三信号监控
+        if getattr(args, 'us_profit_monitor', False):
+            from src.notification import NotificationService
+            from src.us_profit_monitor import format_markdown, run_us_profit_monitor
+
+            logger.info("模式: 美股止盈三信号监控")
+            notifier = NotificationService()
+            snapshot = run_us_profit_monitor(
+                send_notification=not args.no_notify,
+                force_notify=not args.no_notify,
+                notifier=notifier,
+            )
+            logger.info("\n%s", format_markdown(snapshot))
             return 0
 
         # 模式1: 仅大盘复盘

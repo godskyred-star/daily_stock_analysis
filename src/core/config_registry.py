@@ -1258,6 +1258,48 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "validation": {"enum": ["cn", "us", "both"]},
         "display_order": 47,
     },
+    "US_PROFIT_MONITOR_ENABLED": {
+        "title": "US Profit Monitor Enabled",
+        "description": "Enable daily VIX / QQQ PE / CNN Fear & Greed profit-taking monitor.",
+        "category": "system",
+        "data_type": "boolean",
+        "ui_control": "switch",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "true",
+        "options": [],
+        "validation": {},
+        "display_order": 48,
+    },
+    "US_PROFIT_MONITOR_NOTIFY": {
+        "title": "US Profit Monitor Notify",
+        "description": "Push the US profit-taking snapshot through configured notification channels.",
+        "category": "system",
+        "data_type": "boolean",
+        "ui_control": "switch",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "true",
+        "options": [],
+        "validation": {},
+        "display_order": 49,
+    },
+    "US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS": {
+        "title": "US Profit Monitor Notify Min Triggers",
+        "description": "Minimum profit-taking signals required before a scheduled push (0 = always).",
+        "category": "system",
+        "data_type": "integer",
+        "ui_control": "number",
+        "is_sensitive": False,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": "1",
+        "options": [],
+        "validation": {"min": 0, "max": 3},
+        "display_order": 51,
+    },
     "MAX_WORKERS": {
         "title": "Max Workers",
         "description": "Maximum concurrent analysis threads. Keep low to avoid API rate limits.",
@@ -1535,7 +1577,19 @@ def _infer_category(key: str) -> str:
         "ASTRBOT",
     )) or "WEBHOOK" in key:
         return "notification"
-    if key.startswith(("LOG_", "SCHEDULE_", "WEBUI_", "HTTP_", "HTTPS_", "MAX_", "DEBUG", "MARKET_REVIEW_", "TRADING_DAY_", "ANALYSIS_DELAY")):
+    if key.startswith((
+        "LOG_",
+        "SCHEDULE_",
+        "WEBUI_",
+        "HTTP_",
+        "HTTPS_",
+        "MAX_",
+        "DEBUG",
+        "MARKET_REVIEW_",
+        "TRADING_DAY_",
+        "ANALYSIS_DELAY",
+        "US_PROFIT_MONITOR_",
+    )):
         return "system"
     return "uncategorized"
 

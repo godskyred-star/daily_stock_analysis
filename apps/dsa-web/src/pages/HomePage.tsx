@@ -12,6 +12,7 @@ import { useAnalysisStore } from '../stores/analysisStore';
 import { ReportSummary } from '../components/report';
 import { HistoryList } from '../components/history';
 import { TaskPanel } from '../components/tasks';
+import { UsProfitTicker } from '../components/market';
 import { useTaskStream } from '../hooks';
 
 /**
@@ -306,7 +307,7 @@ const HomePage: React.FC = () => {
     >
       {/* 顶部输入栏 */}
       <header
-        className="md:col-start-2 md:col-end-5 md:row-start-1 py-3 px-3 md:px-0 border-b border-white/5 flex-shrink-0 flex items-center min-w-0 overflow-hidden"
+        className="md:col-start-2 md:col-end-5 md:row-start-1 py-3 px-3 md:px-0 border-b border-white/5 flex-shrink-0 flex flex-col gap-2 min-w-0 overflow-hidden"
       >
         <div className="flex items-center gap-2 w-full min-w-0 flex-1" style={{ maxWidth: 'min(100%, 1168px)' }}>
           {/* Mobile hamburger */}
@@ -357,6 +358,9 @@ const HomePage: React.FC = () => {
               '分析'
             )}
           </button>
+        </div>
+        <div className="w-full min-w-0" style={{ maxWidth: 'min(100%, 1168px)' }}>
+          <UsProfitTicker />
         </div>
       </header>
 

@@ -266,6 +266,10 @@ class Config:
     market_review_region: str = "cn"
     # 交易日检查：默认启用，非交易日跳过执行；设为 false 或 --force-run 可强制执行（Issue #373）
     trading_day_check_enabled: bool = True
+    # US profit-taking monitor: VIX + QQQ PE + CNN Fear & Greed
+    us_profit_monitor_enabled: bool = True
+    us_profit_monitor_notify: bool = True
+    us_profit_monitor_notify_min_triggers: int = 1
 
     # === 实时行情增强数据配置 ===
     # 实时行情开关（关闭后使用历史收盘价进行分析）
@@ -701,6 +705,11 @@ class Config:
                 os.getenv('MARKET_REVIEW_REGION', 'cn')
             ),
             trading_day_check_enabled=os.getenv('TRADING_DAY_CHECK_ENABLED', 'true').lower() != 'false',
+            us_profit_monitor_enabled=os.getenv('US_PROFIT_MONITOR_ENABLED', 'true').lower() != 'false',
+            us_profit_monitor_notify=os.getenv('US_PROFIT_MONITOR_NOTIFY', 'true').lower() != 'false',
+            us_profit_monitor_notify_min_triggers=int(
+                os.getenv('US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS', '1')
+            ),
             webui_enabled=os.getenv('WEBUI_ENABLED', 'false').lower() == 'true',
             webui_host=os.getenv('WEBUI_HOST', '127.0.0.1'),
             webui_port=int(os.getenv('WEBUI_PORT', '8000')),

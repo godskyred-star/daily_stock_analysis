@@ -4,6 +4,7 @@ on:
   # 定时触发 - 每天北京时间 18:00 (UTC 10:00)
   schedule:
     - cron: '0 10 * * 1-5'     # 周一到周五，UTC 10:00 = 北京时间 18:00
+    - cron: '0 21 * * 1-5'     # 周一到周五，UTC 21:00 ≈ 美股收盘后止盈巡检
   
   # 手动触发
   workflow_dispatch:
@@ -17,6 +18,7 @@ on:
           - full          # 完整分析（股票+大盘）
           - market-only   # 仅大盘复盘
           - stocks-only   # 仅股票分析
+          - us-profit-only  # 仅美股止盈三信号监控
       force_run:
         description: '强制运行（跳过交易日检查）'
         required: false
@@ -159,6 +161,9 @@ jobs:
           REPORT_TYPE: ${{ vars.REPORT_TYPE || secrets.REPORT_TYPE || 'simple' }}
           SINGLE_STOCK_NOTIFY: ${{ vars.SINGLE_STOCK_NOTIFY || secrets.SINGLE_STOCK_NOTIFY || 'false' }}
           MARKET_REVIEW_ENABLED: ${{ vars.MARKET_REVIEW_ENABLED || secrets.MARKET_REVIEW_ENABLED || 'true' }}
+          US_PROFIT_MONITOR_ENABLED: ${{ vars.US_PROFIT_MONITOR_ENABLED || secrets.US_PROFIT_MONITOR_ENABLED || 'true' }}
+          US_PROFIT_MONITOR_NOTIFY: ${{ vars.US_PROFIT_MONITOR_NOTIFY || secrets.US_PROFIT_MONITOR_NOTIFY || 'true' }}
+          US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS: ${{ vars.US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS || secrets.US_PROFIT_MONITOR_NOTIFY_MIN_TRIGGERS || '1' }}
           ANALYSIS_DELAY: ${{ vars.ANALYSIS_DELAY || secrets.ANALYSIS_DELAY || '0' }}
           TRADING_DAY_CHECK_ENABLED: ${{ vars.TRADING_DAY_CHECK_ENABLED || secrets.TRADING_DAY_CHECK_ENABLED || 'true' }}
           
@@ -187,6 +192,10 @@ jobs:
 
           # 判断运行模式
           MODE="${{ github.event.inputs.mode || 'full' }}"
+          if [ "${{ github.event.schedule }}" = "0 21 * * 1-5" ]; then
+            MODE="us-profit-only"
+            echo "🇺🇸 定时触发：美股收盘后止盈巡检"
+          fi
           
           echo "=========================================="
           echo "🚀 A股自选股智能分析系统"
@@ -231,7 +240,9 @@ jobs:
           if [ "$MODE" = "market-only" ]; then
             python main.py --market-review $FORCE_RUN_ARG
           elif [ "$MODE" = "stocks-only" ]; then
-            python main.py --no-market-review $FORCE_RUN_ARG
+            python main.py --no-market-review --no-us-profit-monitor $FORCE_RUN_ARG
+          elif [ "$MODE" = "us-profit-only" ]; then
+            python main.py --us-profit-monitor $FORCE_RUN_ARG
           else
             python main.py $FORCE_RUN_ARG
           fi

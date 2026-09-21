@@ -7,6 +7,7 @@ import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ChatPage from './pages/ChatPage';
+import UsProfitPage from './pages/UsProfitPage';
 import { ApiErrorAlert } from './components/common';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useAgentChatStore } from './stores/agentChatStore';
@@ -24,6 +25,15 @@ const BacktestIcon: React.FC<{ active?: boolean }> = ({active}) => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5}
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+    </svg>
+);
+
+const UsProfitIcon: React.FC<{ active?: boolean }> = ({active}) => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5}
+              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 2 : 1.5}
+              d="M3 17a4 4 0 004 4h.5"/>
     </svg>
 );
 
@@ -58,9 +68,15 @@ type DockItem = {
 
 const NAV_ITEMS: DockItem[] = [
     {
-        key: 'home',
-        label: '首页',
+        key: 'us-profit',
+        label: '止盈',
         to: '/',
+        icon: UsProfitIcon,
+    },
+    {
+        key: 'home',
+        label: '分析',
+        to: '/analyze',
         icon: HomeIcon,
     },
     {
@@ -90,7 +106,7 @@ const DockNav: React.FC = () => {
     return (
         <aside className="dock-nav" aria-label="主导航">
             <div className="dock-surface">
-                <NavLink to="/" className="dock-logo" title="首页" aria-label="首页">
+                <NavLink to="/" className="dock-logo" title="美股止盈" aria-label="美股止盈">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
@@ -204,7 +220,9 @@ const AppContent: React.FC = () => {
             <DockNav/>
             <main className="flex-1 dock-safe-area">
                 <Routes>
-                    <Route path="/" element={<HomePage/>}/>
+                    <Route path="/" element={<UsProfitPage/>}/>
+                    <Route path="/us-profit" element={<Navigate to="/" replace />}/>
+                    <Route path="/analyze" element={<HomePage/>}/>
                     <Route path="/chat" element={<ChatPage/>}/>
                     <Route path="/backtest" element={<BacktestPage/>}/>
                     <Route path="/settings" element={<SettingsPage/>}/>
