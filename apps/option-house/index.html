@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KZG Option House · 美股期权日报</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23111'/%3E%3Ctext x='16' y='21' text-anchor='middle' fill='%23fbfaf6' font-family='Georgia' font-size='11'%3EKZG%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main" data-chrome="skip">跳到主要内容</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">KZG</div>
+        <div>
+          <h1>KZG Option House</h1>
+          <p>Minute Aggregate Option Report</p>
+        </div>
+      </div>
+      <div class="dateplate">
+        <b id="headerDate">—</b>
+        <span id="generatedAt"></span>
+      </div>
+      <div class="toolbar" aria-label="工具">
+        <button id="goToday" class="button" type="button">
+          <span aria-hidden="true">⌁</span>
+          <span data-chrome="today">回到最新</span>
+        </button>
+        <button id="themeToggle" class="button" type="button">
+          <span aria-hidden="true">◐</span>
+          <span data-chrome="theme">暗色</span>
+        </button>
+        <button id="langToggle" class="button" type="button">
+          <span aria-hidden="true">文</span>
+          <span data-chrome="lang">EN</span>
+        </button>
+        <button id="notesOpen" class="button" type="button">
+          <span aria-hidden="true">?</span>
+          <span id="notesOpenLabel" data-chrome="notes">指标说明</span>
+        </button>
+        <button id="downloadReport" class="button primary" type="button">
+          <span aria-hidden="true">↓</span>
+          <span data-chrome="export">导出 PNG</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <div class="wrap">
+      <div id="timelineSlot"></div>
+      <div id="rest"></div>
+    </div>
+  </main>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+  <dialog id="notesDialog" aria-labelledby="notesTitle"></dialog>
+  <div id="calModal" class="modal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="calLabel">
+      <div class="cal-head">
+        <button type="button" id="calPrev" class="button" aria-label="prev">‹</button>
+        <b id="calLabel"></b>
+        <button type="button" id="calNext" class="button" aria-label="next">›</button>
+      </div>
+      <div id="calGrid" class="cal-grid"></div>
+    </div>
+  </div>
+  <pre id="selftest" hidden></pre>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -75,5 +75,9 @@ CLAUDE.md
 
 # ignore static files
 static/
+
+# Option House ships a generated fixture. The global data/ rule is for caches.
+!/apps/option-house/data/
+!/apps/option-house/data/**
 /apps/dsa-desktop/dist/
 /apps/dsa-desktop/node_modules/
